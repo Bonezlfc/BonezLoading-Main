@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Loading Screen</title>
+
+    <!-- Premium typography — Barlow Condensed (titles) + Inter (body) -->
+    <!-- Falls back to Impact / system-ui if CDN unreachable -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Custom NUI cursor (FiveM hides the OS cursor in loadscreens) -->
+<div id="nui-cursor" class="nui-cursor" aria-hidden="true"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     BACKGROUND LAYER
+     Three stacked layers: canvas (particles), CSS gradient, grid noise.
+     Gradient / particles toggled via Config.BackgroundMode in app.js.
+════════════════════════════════════════════════════════════════ -->
+<div class="bg-layer" id="bg-layer">
+    <!-- Layer 1: image (mode='image' only — shown via has-image class) -->
+    <div class="bg-image" id="bg-image"></div>
+    <!-- Layer 2: particle canvas (mode='particles' only) -->
+    <canvas id="bg-canvas"></canvas>
+    <!-- Layer 3: gradient or dim overlay depending on mode -->
+    <div class="bg-gradient" id="bg-gradient"></div>
+    <!-- Layer 4: subtle industrial grid (always visible) -->
+    <div class="bg-grid"></div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     SCREEN  —  flex column: header | main | footer
+════════════════════════════════════════════════════════════════ -->
+<div class="screen">
+
+    <!-- ── HEADER ──────────────────────────────────────────────── -->
+    <header class="header">
+
+        <div class="header-brand">
+            <!--
+                Server Seal / Logo
+                ──────────────────
+                Option A (default): The SVG below auto-fills with your server's
+                  initials derived from Config.ServerName (e.g. "Night Shift RP" → "NSR").
+
+                Option B: Replace the entire <div class="sau-seal"> contents with:
+                  <img src="assets/img/logo.png" alt="Server Logo"
+                       style="width:100%;height:100%;object-fit:contain;">
+                  then place your logo PNG in web/assets/img/logo.png
+            -->
+            <div class="sau-seal" aria-hidden="true">
+                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Outer hex -->
+                    <polygon points="32,3 59,17.5 59,46.5 32,61 5,46.5 5,17.5"
+                             stroke="var(--accent)" stroke-width="1.4" fill="none" opacity="0.9"/>
+                    <!-- Inner hex -->
+                    <polygon points="32,11 52,22.5 52,41.5 32,53 12,41.5 12,22.5"
+                             stroke="var(--accent)" stroke-width="0.7" fill="none" opacity="0.35"/>
+                    <!-- Corner connectors -->
+                    <line x1="32" y1="3"    x2="32" y2="11"   stroke="var(--accent)" stroke-width="1" opacity="0.5"/>
+                    <line x1="32" y1="53"   x2="32" y2="61"   stroke="var(--accent)" stroke-width="1" opacity="0.5"/>
+                    <line x1="5"  y1="17.5" x2="12" y2="22.5" stroke="var(--accent)" stroke-width="1" opacity="0.5"/>
+                    <line x1="52" y1="41.5" x2="59" y2="46.5" stroke="var(--accent)" stroke-width="1" opacity="0.5"/>
+                    <line x1="59" y1="17.5" x2="52" y2="22.5" stroke="var(--accent)" stroke-width="1" opacity="0.5"/>
+                    <line x1="5"  y1="46.5" x2="12" y2="41.5" stroke="var(--accent)" stroke-width="1" opacity="0.5"/>
+                    <!-- Abbreviation — auto-filled by app.js from Config.ServerName -->
+                    <text id="seal-abbr" x="32" y="29" text-anchor="middle"
+                          font-family="'Barlow Condensed', Impact, sans-serif"
+                          font-size="11" font-weight="900"
+                          fill="var(--accent)" letter-spacing="2">???</text>
+                    <text id="seal-sub" x="32" y="40" text-anchor="middle"
+                          font-family="'Inter', system-ui, sans-serif"
+                          font-size="5.5" font-weight="600"
+                          fill="var(--accent)" letter-spacing="1.5" opacity="0.7">SERVER</text>
+                </svg>
+            </div>
+
+            <div class="header-titles">
+                <h1 class="server-name" id="server-name">Your Server Name</h1>
+                <p class="server-tagline" id="tagline">Your tagline goes here</p>
+            </div>
+        </div>
+
+        <!-- right: date + status chips -->
+        <div class="header-meta">
+            <div class="meta-chip">
+                <span class="chip-label">DATE</span>
+                <span class="chip-value" id="current-date">2026-01-01</span>
+            </div>
+            <div class="meta-chip" id="status-chip">
+                <span class="chip-label">STATUS</span>
+                <span class="chip-value chip-online" id="server-status">ONLINE</span>
+            </div>
+        </div>
+
+    </header><!-- /header -->
+
+
+    <!-- ── MAIN  ────────────────────────────────────────────────── -->
+    <main class="main">
+
+        <!-- LEFT — rotating info cards -->
+        <section class="panel panel-left" aria-label="Server Information">
+            <div class="panel-eyebrow">INFORMATION</div>
+
+            <div class="cards-viewport" id="cards-viewport">
+                <!-- .info-card elements injected by app.js -->
+            </div>
+
+            <div class="card-nav" id="card-nav">
+                <!-- .card-dot elements injected by app.js -->
+            </div>
+        </section>
+
+
+        <!-- CENTER — progress -->
+        <section class="progress-section" aria-label="Loading Progress">
+
+            <div class="progress-label-row">
+                <span class="progress-eyebrow">LOADING</span>
+            </div>
+
+            <div class="progress-pct-row">
+                <span class="progress-pct" id="progress-pct">0</span>
+                <span class="progress-symbol">%</span>
+            </div>
+
+            <div class="progress-bar-wrap">
+                <div class="progress-track">
+                    <div class="progress-fill"  id="progress-fill"></div>
+                    <div class="progress-tip"   id="progress-tip"></div>
+                </div>
+                <!-- decorative tick marks at 25 / 50 / 75 % -->
+                <div class="progress-ticks" aria-hidden="true">
+                    <span class="tick" style="left:25%"></span>
+                    <span class="tick" style="left:50%"></span>
+                    <span class="tick" style="left:75%"></span>
+                </div>
+            </div>
+
+            <div class="progress-status-row">
+                <span class="status-pulse" aria-hidden="true"></span>
+                <span class="status-text" id="status-text">Connecting to server…</span>
+            </div>
+
+        </section><!-- /progress-section -->
+
+
+        <!-- RIGHT — links + tip -->
+        <section class="panel panel-right" aria-label="Server Links">
+            <div class="panel-eyebrow">CONNECT</div>
+
+            <div class="server-links" id="server-links">
+                <!-- .server-link elements injected by app.js -->
+            </div>
+
+            <div class="tip-block">
+                <div class="tip-eyebrow">TIP</div>
+                <p class="tip-text" id="tip-text">Loading…</p>
+            </div>
+        </section>
+
+    </main><!-- /main -->
+
+
+    <!-- ── FOOTER — music controls + quick links ───────────────── -->
+    <footer class="footer">
+
+        <div class="music-player">
+
+            <div class="music-controls">
+                <button class="ctrl-btn" id="btn-prev" title="Previous track" aria-label="Previous">
+                    <!-- skip_previous -->
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <path d="M6 6h2v12H6zm3.5 6 8.5 6V6z"/>
+                    </svg>
+                </button>
+                <button class="ctrl-btn ctrl-play" id="btn-play" title="Play / Pause" aria-label="Play or pause">
+                    <svg id="icon-play"  width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+                    <svg id="icon-pause" width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="display:none"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+                </button>
+                <button class="ctrl-btn" id="btn-next" title="Next track" aria-label="Next">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                        <path d="M6 18l8.5-6L6 6v12zm2-8.14L11.03 12 8 14.14V9.86zM16 6h2v12h-2z"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="track-info">
+                <div class="track-name" id="track-name">No track loaded</div>
+                <div class="track-progress-row">
+                    <span class="track-time" id="track-time">0:00</span>
+                    <div class="track-bar">
+                        <div class="track-bar-fill" id="track-bar-fill"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="volume-wrap">
+                <button class="ctrl-btn" id="btn-mute" title="Mute / Unmute" aria-label="Toggle mute">
+                    <svg id="icon-vol"  width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+                    <svg id="icon-mute" width="15" height="15" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style="display:none"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3 3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4 9.91 6.09 12 8.18V4z"/></svg>
+                </button>
+                <input type="range" class="volume-slider" id="volume-slider"
+                       min="0" max="100" value="30" aria-label="Volume">
+            </div>
+
+        </div><!-- /music-player -->
+
+        <div class="footer-divider" aria-hidden="true"></div>
+
+        <nav class="footer-links" id="footer-links" aria-label="Quick links">
+            <!-- anchor elements injected by app.js -->
+        </nav>
+
+    </footer><!-- /footer -->
+
+</div><!-- /screen -->
+
+<!-- audio element — src set by app.js -->
+<audio id="audio-player" preload="auto"></audio>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

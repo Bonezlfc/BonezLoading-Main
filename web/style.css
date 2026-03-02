@@ -1,0 +1,1054 @@
+/* ═══════════════════════════════════════════════════════════════════
+   San Andreas United — Loading Screen Styles
+   Bonez Workshop build  ·  v1.0.0
+   ─────────────────────────────────────────────────────────────────
+   Section map:
+     1. Reset & CSS variables
+     2. Background layers
+     3. Screen layout  (flex column wrapper)
+     4. Header
+     5. Main  (three-panel grid)
+     6. Left panel  — rotating info cards
+     7. Progress section  (center)
+     8. Right panel  — links & tips
+     9. Footer  — music player
+    10. Shared utilities
+    11. Keyframe animations
+    12. Responsive  (ultrawide clamp + 720p floor)
+═══════════════════════════════════════════════════════════════════ */
+
+
+/* ─────────────────────────────────────────────────────────────────
+   1.  RESET & CSS VARIABLES
+───────────────────────────────────────────────────────────────── */
+*, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    /* ── Palette ──────────────────────────────────────────────── */
+    --bg-base       : #0b0d12;
+    --bg-surface    : #10131a;
+    --bg-card       : #171b25;
+    --bg-card-hover : #1d2234;
+
+    /* Main accent — overridden by app.js from Config.AccentColor */
+    --accent        : #3a7bd5;
+    --accent-dim    : rgba(58, 123, 213, 0.10);
+    --accent-mid    : rgba(58, 123, 213, 0.22);
+    --accent-glow   : rgba(58, 123, 213, 0.40);
+    --accent-border : rgba(58, 123, 213, 0.28);
+
+    --text-primary  : #edf0f5;
+    --text-secondary: #8896aa;
+    --text-muted    : #3d4a5e;
+
+    --border        : rgba(255, 255, 255, 0.048);
+    --border-light  : rgba(255, 255, 255, 0.08);
+
+    /* ── Geometry ─────────────────────────────────────────────── */
+    --radius-xs : 3px;
+    --radius-sm : 5px;
+    --radius    : 8px;
+    --radius-lg : 12px;
+
+    /* ── Typography ───────────────────────────────────────────── */
+    --font-title : 'Barlow Condensed', 'Impact', 'Arial Narrow', sans-serif;
+    --font-body  : 'Inter', 'Segoe UI', system-ui, sans-serif;
+
+    /* ── Layout constants ─────────────────────────────────────── */
+    --header-h : 76px;
+    --footer-h : 64px;
+    --gutter   : clamp(20px, 2.8vw, 44px);
+}
+
+html, body {
+    width : 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
+body {
+    font-family: var(--font-body);
+    background  : var(--bg-base);
+    color       : var(--text-primary);
+    user-select : none;
+    /* FiveM NUI hides the OS cursor in loadscreens.
+       We render our own via #nui-cursor + JS mousemove.  */
+    cursor      : none;
+    -webkit-font-smoothing : antialiased;
+}
+
+/* ── Custom NUI cursor ───────────────────────────────────────────
+   FiveM's CEF hides the hardware cursor during the loadscreen.
+   This div is repositioned on every mousemove event in app.js.
+   pointer-events: none ensures it never blocks clicks.
+────────────────────────────────────────────────────────────────── */
+.nui-cursor {
+    position      : fixed;
+    top           : 0;
+    left          : 0;
+    width         : 18px;
+    height        : 18px;
+    pointer-events: none;
+    z-index       : 99999;
+    /* offset so tip of arrow is at mouse position */
+    transform     : translate(-2px, -2px);
+    will-change   : transform;
+}
+
+/* Arrow cursor drawn in pure CSS — no image dependency */
+.nui-cursor::before {
+    content : '';
+    position: absolute;
+    top     : 0;
+    left    : 0;
+    /* Classic arrow shape via clip-path */
+    width   : 12px;
+    height  : 18px;
+    background   : #ffffff;
+    clip-path    : polygon(0% 0%, 0% 100%, 30% 70%, 45% 100%, 58% 94%, 43% 68%, 72% 68%);
+    filter       : drop-shadow(1px 1px 1px rgba(0,0,0,0.7));
+}
+
+/* Clickable elements get a pointer cursor shape */
+a, button, [role="button"], input[type="range"],
+.card-dot, .server-link, .footer-link, .ctrl-btn {
+    cursor: none;   /* keep OS cursor hidden; JS swap handled below */
+}
+
+/* When hovering something clickable, shrink + accent the cursor */
+.nui-cursor.is-pointer::before {
+    background : var(--accent);
+    clip-path  : polygon(50% 0%, 0% 100%, 100% 100%);   /* triangle pointer */
+    width      : 14px;
+    height     : 14px;
+    transform  : translateY(-4px);
+}
+
+
+/* ─────────────────────────────────────────────────────────────────
+   2.  BACKGROUND LAYERS
+   Stacked: canvas (particles) → CSS gradient → subtle grid
+───────────────────────────────────────────────────────────────── */
+.bg-layer {
+    position: fixed;
+    inset    : 0;
+    z-index  : 0;
+    pointer-events: none;
+}
+
+/* ── Layer 1: image background (mode='image') ────────────────────
+   Hidden by default. app.js adds .has-image to #bg-layer which
+   reveals this div and sets backgroundImage on it.               */
+.bg-image {
+    position           : absolute;
+    inset              : 0;
+    background-size    : cover;
+    background-position: center;
+    background-repeat  : no-repeat;
+    opacity            : 0;
+    transition         : opacity 1s ease;
+}
+
+.bg-layer.has-image .bg-image {
+    opacity: 1;
+}
+
+/* ── Layer 2: particle canvas (mode='particles') ─────────────────
+   Canvas is invisible by default. app.js adds .has-particles to
+   #bg-layer which reveals it.                                     */
+#bg-canvas {
+    position: absolute;
+    inset    : 0;
+    width    : 100%;
+    height   : 100%;
+    opacity  : 0;
+    transition: opacity 1s ease;
+}
+
+.bg-layer.has-particles #bg-canvas {
+    opacity: 0.65;
+}
+
+/* ── Layer 3: gradient / dim overlay ─────────────────────────────
+   gradient mode  → fully opaque dark animated gradient (default)
+   image mode     → semi-transparent dark vignette (image shows through)
+   particles mode → semi-transparent dark vignette (particles show through) */
+.bg-gradient {
+    position: absolute;
+    inset    : 0;
+    /* Default: fully opaque animated dark gradient */
+    background:
+        radial-gradient(ellipse 60% 50% at 15% 85%, rgba(58,123,213,0.065) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 40% at 85% 15%, rgba(29,78,216,0.045)  0%, transparent 65%),
+        linear-gradient(155deg, #0b0d12 0%, #0e111a 45%, #0b0d15 100%);
+    animation: bgBreathe 14s ease-in-out infinite;
+    transition: background 0.5s ease;
+}
+
+/* IMAGE mode: dark vignette overlay so text stays legible over the photo.
+   Edges and corners are darkened; center is lighter so the image shows. */
+.bg-layer.has-image .bg-gradient {
+    background:
+        radial-gradient(ellipse 70% 50% at 50% 50%, transparent 30%, rgba(11,13,18,0.55) 100%),
+        linear-gradient(to bottom, rgba(11,13,18,0.50) 0%, rgba(11,13,18,0.15) 45%, rgba(11,13,18,0.55) 100%);
+    animation: none;
+}
+
+/* PARTICLES mode: thin dark fog only — must be light or particles are buried.
+   The body background (#0b0d12) shows through the transparent canvas,
+   this just adds a very slight uniform dimming. */
+.bg-layer.has-particles .bg-gradient {
+    background: rgba(11, 13, 18, 0.20);
+    animation: none;
+}
+
+@keyframes bgBreathe {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.82; }
+}
+
+/* Subtle grid — industrial / tactical feel (Bonez touch) */
+.bg-grid {
+    position: absolute;
+    inset    : 0;
+    background-image:
+        linear-gradient(rgba(255,255,255,0.018) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.018) 1px, transparent 1px);
+    background-size: 56px 56px;
+    /* very faint diagonal bias */
+    transform: skewY(-1deg) scaleY(1.03);
+    transform-origin: top left;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────
+   3.  SCREEN LAYOUT  (flex column, 100vw × 100vh)
+───────────────────────────────────────────────────────────────── */
+.screen {
+    position       : relative;
+    z-index        : 1;
+    display        : flex;
+    flex-direction : column;
+    width          : 100vw;
+    height         : 100vh;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────
+   4.  HEADER
+───────────────────────────────────────────────────────────────── */
+.header {
+    position       : relative;
+    display        : flex;
+    align-items    : center;
+    justify-content: space-between;
+    height         : var(--header-h);
+    padding        : 0 var(--gutter);
+    flex-shrink    : 0;
+    background     : rgba(11, 13, 18, 0.72);
+    backdrop-filter: blur(14px);
+    border-bottom  : 1px solid var(--border);
+    gap            : 1vw;
+}
+
+/* Accent underline beneath brand text */
+.header::after {
+    content   : '';
+    position  : absolute;
+    bottom    : 0;
+    left      : var(--gutter);
+    width     : clamp(80px, 10vw, 160px);
+    height    : 1px;
+    background: linear-gradient(to right, var(--accent), transparent);
+}
+
+/* Brand (seal + titles) */
+.header-brand {
+    display    : flex;
+    align-items: center;
+    gap        : clamp(10px, 1.2vw, 20px);
+    flex-shrink: 0;
+}
+
+.sau-seal {
+    width     : clamp(38px, 4vw, 56px);
+    height    : clamp(38px, 4vw, 56px);
+    flex-shrink: 0;
+    filter    : drop-shadow(0 0 10px var(--accent-glow));
+    animation : sealPulse 4s ease-in-out infinite;
+}
+
+.sau-seal svg { width: 100%; height: 100%; }
+
+@keyframes sealPulse {
+    0%, 100% { filter: drop-shadow(0 0 8px var(--accent-glow)); }
+    50%       { filter: drop-shadow(0 0 16px rgba(58,123,213,0.55)); }
+}
+
+.header-titles {
+    display       : flex;
+    flex-direction: column;
+    gap           : 3px;
+}
+
+.server-name {
+    font-family   : var(--font-title);
+    font-size     : clamp(16px, 1.9vw, 27px);
+    font-weight   : 900;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color         : var(--text-primary);
+    line-height   : 1;
+}
+
+.server-tagline {
+    font-size     : clamp(9px, 0.72vw, 11px);
+    font-weight   : 400;
+    letter-spacing: 0.28em;
+    text-transform: uppercase;
+    color         : var(--text-secondary);
+}
+
+/* Meta chips (date, status) */
+.header-meta {
+    display: flex;
+    gap    : 10px;
+}
+
+.meta-chip {
+    display        : flex;
+    flex-direction : column;
+    align-items    : flex-end;
+    gap            : 2px;
+    padding        : 6px 14px;
+    min-width      : 80px;
+    border         : 1px solid var(--border-light);
+    border-radius  : var(--radius-xs);
+    background     : rgba(255,255,255,0.018);
+}
+
+.chip-label {
+    font-size     : 8px;
+    font-weight   : 700;
+    letter-spacing: 0.22em;
+    color         : var(--text-muted);
+    text-transform: uppercase;
+}
+
+.chip-value {
+    font-size     : clamp(11px, 1vw, 14px);
+    font-weight   : 700;
+    color         : var(--text-primary);
+    letter-spacing: 0.04em;
+}
+
+/* Online indicator dot */
+.chip-online::before {
+    content      : '';
+    display      : inline-block;
+    width        : 6px;
+    height       : 6px;
+    border-radius: 50%;
+    background   : #22c55e;
+    margin-right : 6px;
+    animation    : onlineBlink 2.5s ease-in-out infinite;
+}
+
+@keyframes onlineBlink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.35; }
+}
+
+
+/* ─────────────────────────────────────────────────────────────────
+   5.  MAIN  —  three-panel flex row
+───────────────────────────────────────────────────────────────── */
+.main {
+    display   : flex;
+    flex      : 1;
+    overflow  : hidden;
+    min-height: 0;
+}
+
+/* Shared panel base */
+.panel {
+    display       : flex;
+    flex-direction: column;
+    padding       : clamp(18px, 2.2vw, 36px) var(--gutter);
+    gap           : clamp(14px, 1.5vw, 24px);
+    min-width     : 0;
+}
+
+.panel-eyebrow {
+    font-size     : 9px;
+    font-weight   : 700;
+    letter-spacing: 0.30em;
+    color         : var(--text-muted);
+    text-transform: uppercase;
+    padding-bottom: 10px;
+    border-bottom : 1px solid var(--border);
+    flex-shrink   : 0;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────
+   6.  LEFT PANEL  —  rotating info cards
+───────────────────────────────────────────────────────────────── */
+.panel-left {
+    flex      : 0 0 29%;
+    border-right: 1px solid var(--border);
+}
+
+/* Viewport that clips the stacked cards */
+.cards-viewport {
+    position: relative;
+    flex    : 1;
+    overflow: hidden;
+    min-height: 0;
+}
+
+.info-card {
+    position       : absolute;
+    inset          : 0;
+    display        : flex;
+    flex-direction : column;
+    gap            : clamp(10px, 1.1vw, 18px);
+    opacity        : 0;
+    transform      : translateY(10px);
+    transition     : opacity 0.55s ease, transform 0.55s ease;
+    pointer-events : none;
+}
+
+.info-card.active {
+    opacity       : 1;
+    transform     : translateY(0);
+    pointer-events: auto;
+}
+
+/* Card emoji icon */
+.card-icon {
+    font-size  : clamp(16px, 1.7vw, 26px);
+    line-height: 1;
+    filter     : drop-shadow(0 0 6px var(--accent-glow));
+}
+
+/* Card title with left accent bar */
+.card-title {
+    font-family   : var(--font-title);
+    font-size     : clamp(13px, 1.3vw, 20px);
+    font-weight   : 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color         : var(--text-primary);
+    padding-left  : 12px;
+    border-left   : 2px solid var(--accent);
+    line-height   : 1.2;
+}
+
+/* Card bullet list */
+.card-items {
+    list-style    : none;
+    display       : flex;
+    flex-direction: column;
+    gap           : clamp(6px, 0.7vw, 11px);
+}
+
+.card-items li {
+    display    : flex;
+    align-items: baseline;
+    gap        : 9px;
+    font-size  : clamp(10px, 0.82vw, 13px);
+    color      : var(--text-secondary);
+    line-height: 1.55;
+}
+
+/* Dot bullet */
+.card-items li::before {
+    content      : '';
+    display      : inline-block;
+    width        : 3px;
+    height       : 3px;
+    border-radius: 50%;
+    background   : var(--accent);
+    flex-shrink  : 0;
+    margin-top   : 5px;
+    opacity      : 0.75;
+}
+
+/* Progress dots / nav */
+.card-nav {
+    display    : flex;
+    gap        : 6px;
+    flex-shrink: 0;
+}
+
+.card-dot {
+    width        : 6px;
+    height       : 6px;
+    border-radius: 3px;
+    background   : var(--text-muted);
+    cursor       : pointer;
+    transition   : background 0.3s ease, width 0.3s ease;
+    flex-shrink  : 0;
+}
+
+.card-dot.active {
+    background: var(--accent);
+    width     : 20px;
+}
+
+.card-dot:hover:not(.active) {
+    background: var(--text-secondary);
+}
+
+
+/* ─────────────────────────────────────────────────────────────────
+   7.  PROGRESS SECTION  (center column)
+───────────────────────────────────────────────────────────────── */
+.progress-section {
+    flex           : 1;
+    display        : flex;
+    flex-direction : column;
+    align-items    : center;
+    justify-content: center;
+    padding        : 2vw var(--gutter);
+    gap            : clamp(14px, 1.8vw, 28px);
+    min-width      : 0;
+}
+
+/* Small eyebrow above the big number */
+.progress-label-row {
+    width: 100%;
+}
+
+.progress-eyebrow {
+    font-size     : 9px;
+    font-weight   : 700;
+    letter-spacing: 0.35em;
+    color         : var(--text-muted);
+    text-transform: uppercase;
+}
+
+/* Large percentage display */
+.progress-pct-row {
+    display    : flex;
+    align-items: flex-start;
+    line-height: 1;
+    /* subtle text shadow pulse handled by animation */
+}
+
+.progress-pct {
+    font-family   : var(--font-title);
+    font-size     : clamp(64px, 9vw, 130px);
+    font-weight   : 900;
+    letter-spacing: -0.02em;
+    color         : var(--text-primary);
+    line-height   : 0.88;
+    transition    : color 0.4s ease;
+    /* large number glow */
+    text-shadow   : 0 0 60px rgba(58,123,213,0.18);
+}
+
+.progress-symbol {
+    font-family   : var(--font-title);
+    font-size     : clamp(26px, 3.2vw, 52px);
+    font-weight   : 700;
+    color         : var(--accent);
+    margin-top    : clamp(6px, 0.8vw, 14px);
+    margin-left   : 4px;
+    opacity       : 0.85;
+}
+
+/* Progress bar */
+.progress-bar-wrap {
+    width        : 100%;
+    display      : flex;
+    flex-direction: column;
+    gap          : 6px;
+}
+
+.progress-track {
+    position     : relative;
+    width        : 100%;
+    height       : 4px;
+    background   : rgba(255,255,255,0.055);
+    border-radius: 2px;
+    overflow     : visible;
+}
+
+/* Animated shimmer fill */
+.progress-fill {
+    position        : absolute;
+    left            : 0;
+    top             : 0;
+    height          : 100%;
+    width           : 0%;
+    border-radius   : 2px;
+    background      : linear-gradient(
+        90deg,
+        #1a4fa0 0%,
+        var(--accent) 40%,
+        #6eb0ff 60%,
+        var(--accent) 80%,
+        #1a4fa0 100%
+    );
+    background-size: 300% 100%;
+    animation      : barShimmer 3.5s linear infinite;
+    transition     : width 0.65s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes barShimmer {
+    0%   { background-position: 100% 0; }
+    100% { background-position:   0% 0; }
+}
+
+/* Glowing orb at the leading edge of the fill */
+.progress-tip {
+    position     : absolute;
+    top          : 50%;
+    width        : 26px;
+    height       : 26px;
+    border-radius: 50%;
+    background   : radial-gradient(circle, var(--accent-glow) 0%, transparent 70%);
+    transform    : translate(-50%, -50%);
+    pointer-events: none;
+    transition   : left 0.65s cubic-bezier(0.4, 0, 0.2, 1);
+    left         : 0%;
+}
+
+/* Tick marks at 25/50/75 */
+.progress-ticks {
+    position: relative;
+    width   : 100%;
+    height  : 6px;
+}
+
+.tick {
+    position     : absolute;
+    top          : 0;
+    width        : 1px;
+    height       : 6px;
+    background   : rgba(255,255,255,0.10);
+    transform    : translateX(-50%);
+}
+
+/* Status row */
+.progress-status-row {
+    display    : flex;
+    align-items: center;
+    gap        : 9px;
+    width      : 100%;
+}
+
+/* Pulsing dot */
+.status-pulse {
+    display      : inline-block;
+    width        : 8px;
+    height       : 8px;
+    border-radius: 50%;
+    background   : var(--accent);
+    flex-shrink  : 0;
+    animation    : statusRing 1.8s ease-in-out infinite;
+}
+
+@keyframes statusRing {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(58,123,213,0.7); }
+    50%       { box-shadow: 0 0 0 7px rgba(58,123,213,0); }
+}
+
+.status-text {
+    font-size  : clamp(10px, 0.82vw, 13px);
+    font-weight: 500;
+    color      : var(--text-secondary);
+    letter-spacing: 0.04em;
+    transition : opacity 0.4s ease;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────
+   8.  RIGHT PANEL  —  server links + tip
+───────────────────────────────────────────────────────────────── */
+.panel-right {
+    flex      : 0 0 27%;
+    border-left: 1px solid var(--border);
+}
+
+/* Link list */
+.server-links {
+    display       : flex;
+    flex-direction: column;
+    gap           : 8px;
+    flex-shrink   : 0;
+}
+
+.server-link {
+    display    : flex;
+    align-items: center;
+    gap        : 12px;
+    padding    : 10px 14px;
+    border     : 1px solid var(--border);
+    border-radius: var(--radius);
+    background : rgba(255,255,255,0.018);
+    text-decoration: none;
+    color      : var(--text-secondary);
+    font-size  : clamp(10px, 0.82vw, 13px);
+    font-weight: 500;
+    transition : background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    cursor     : pointer;
+}
+
+.server-link:hover {
+    background  : var(--accent-dim);
+    border-color: var(--accent-border);
+    color       : var(--text-primary);
+}
+
+.link-icon {
+    display        : flex;
+    align-items    : center;
+    justify-content: center;
+    width          : 28px;
+    height         : 28px;
+    border-radius  : var(--radius-sm);
+    background     : var(--accent-dim);
+    color          : var(--accent);
+    flex-shrink    : 0;
+    transition     : background 0.2s ease;
+}
+
+.server-link:hover .link-icon {
+    background: var(--accent-mid);
+}
+
+.link-label {
+    flex      : 1;
+    font-weight: 600;
+}
+
+.link-arrow {
+    color    : var(--accent);
+    font-size: 13px;
+    opacity  : 0;
+    transform: translateX(-4px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.server-link:hover .link-arrow {
+    opacity  : 1;
+    transform: translateX(0);
+}
+
+/* Tip block */
+.tip-block {
+    display       : flex;
+    flex-direction: column;
+    gap           : 9px;
+    flex          : 1;
+    padding-top   : clamp(14px, 1.5vw, 22px);
+    border-top    : 1px solid var(--border);
+    min-height    : 0;
+}
+
+.tip-eyebrow {
+    font-size     : 9px;
+    font-weight   : 700;
+    letter-spacing: 0.28em;
+    color         : var(--accent);
+    text-transform: uppercase;
+    opacity       : 0.85;
+}
+
+.tip-text {
+    font-size  : clamp(10px, 0.8vw, 13px);
+    color      : var(--text-secondary);
+    line-height: 1.75;
+    font-style : italic;
+    transition : opacity 0.45s ease;
+}
+
+.tip-text.tip-fade {
+    opacity: 0;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────
+   9.  FOOTER  —  music player + quick links
+───────────────────────────────────────────────────────────────── */
+.footer {
+    display        : flex;
+    align-items    : center;
+    height         : var(--footer-h);
+    padding        : 0 var(--gutter);
+    gap            : clamp(16px, 2vw, 32px);
+    flex-shrink    : 0;
+    border-top     : 1px solid var(--border);
+    background     : rgba(11, 13, 18, 0.78);
+    backdrop-filter: blur(14px);
+}
+
+/* ── Music player ────────────────────────────────────────── */
+.music-player {
+    display    : flex;
+    align-items: center;
+    gap        : clamp(10px, 1.4vw, 22px);
+    flex       : 1;
+    min-width  : 0;
+}
+
+/* Control buttons row */
+.music-controls {
+    display    : flex;
+    align-items: center;
+    gap        : 3px;
+    flex-shrink: 0;
+}
+
+.ctrl-btn {
+    display        : flex;
+    align-items    : center;
+    justify-content: center;
+    width          : 30px;
+    height         : 30px;
+    border         : none;
+    border-radius  : var(--radius-sm);
+    background     : transparent;
+    color          : var(--text-secondary);
+    cursor         : pointer;
+    transition     : background 0.15s ease, color 0.15s ease;
+    flex-shrink    : 0;
+}
+
+.ctrl-btn:hover {
+    background: rgba(255,255,255,0.055);
+    color     : var(--text-primary);
+}
+
+/* Play/pause button — slightly distinguished */
+.ctrl-play {
+    background   : var(--accent-dim);
+    border       : 1px solid var(--accent-border);
+    color        : var(--accent);
+    width        : 34px;
+    height       : 34px;
+    border-radius: var(--radius);
+}
+
+.ctrl-play:hover {
+    background: rgba(58,123,213,0.22);
+    color     : var(--text-primary);
+}
+
+/* Track info */
+.track-info {
+    display       : flex;
+    flex-direction: column;
+    gap           : 5px;
+    min-width     : 0;
+    flex          : 1;
+}
+
+.track-name {
+    font-size     : clamp(10px, 0.8vw, 13px);
+    font-weight   : 600;
+    color         : var(--text-primary);
+    white-space   : nowrap;
+    overflow      : hidden;
+    text-overflow : ellipsis;
+    max-width     : clamp(100px, 16vw, 260px);
+}
+
+.track-progress-row {
+    display    : flex;
+    align-items: center;
+    gap        : 8px;
+}
+
+.track-time {
+    font-size         : 10px;
+    color             : var(--text-muted);
+    font-variant-numeric: tabular-nums;
+    flex-shrink       : 0;
+}
+
+.track-bar {
+    flex         : 1;
+    max-width    : clamp(60px, 12vw, 200px);
+    height       : 2px;
+    background   : rgba(255,255,255,0.07);
+    border-radius: 1px;
+    overflow     : hidden;
+}
+
+.track-bar-fill {
+    height       : 100%;
+    background   : var(--accent);
+    border-radius: 1px;
+    width        : 0%;
+    transition   : width 0.6s linear;
+}
+
+/* Volume controls */
+.volume-wrap {
+    display    : flex;
+    align-items: center;
+    gap        : 8px;
+    flex-shrink: 0;
+}
+
+/* Mute icon color shifts when muted */
+.ctrl-btn.muted {
+    color  : var(--text-muted);
+    opacity: 0.6;
+}
+
+/* Custom volume range input */
+.volume-slider {
+    -webkit-appearance: none;
+    appearance        : none;
+    width             : clamp(55px, 6vw, 90px);
+    height            : 2px;
+    background        : rgba(255,255,255,0.07);
+    border-radius     : 1px;
+    cursor            : pointer;
+    outline           : none;
+}
+
+.volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance        : none;
+    width             : 11px;
+    height            : 11px;
+    border-radius     : 50%;
+    background        : var(--accent);
+    cursor            : pointer;
+    transition        : transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.volume-slider::-webkit-slider-thumb:hover {
+    transform : scale(1.35);
+    box-shadow: 0 0 6px var(--accent-glow);
+}
+
+/* Divider between player and links */
+.footer-divider {
+    width     : 1px;
+    height    : 30px;
+    background: var(--border-light);
+    flex-shrink: 0;
+}
+
+/* Quick links */
+.footer-links {
+    display    : flex;
+    align-items: center;
+    gap        : clamp(14px, 1.8vw, 28px);
+    flex-shrink: 0;
+}
+
+.footer-link {
+    font-size     : clamp(9px, 0.72vw, 11px);
+    font-weight   : 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color         : var(--text-muted);
+    text-decoration: none;
+    cursor        : pointer;
+    transition    : color 0.15s ease;
+}
+
+.footer-link:hover {
+    color: var(--text-primary);
+}
+
+/* Separator dot between footer links */
+.footer-link + .footer-link::before {
+    content     : '·';
+    margin-right: clamp(14px, 1.8vw, 28px);
+    color       : var(--text-muted);
+    pointer-events: none;
+}
+
+
+/* ─────────────────────────────────────────────────────────────────
+   10.  SHARED UTILITIES
+───────────────────────────────────────────────────────────────── */
+
+/* Visually hidden (a11y) */
+.sr-only {
+    position: absolute;
+    width   : 1px;
+    height  : 1px;
+    padding : 0;
+    margin  : -1px;
+    overflow: hidden;
+    clip    : rect(0,0,0,0);
+    border  : 0;
+}
+
+/* Progress bar completion flash */
+.progress-fill.complete {
+    animation: completeFlash 0.6s ease forwards, barShimmer 3.5s linear infinite;
+}
+
+@keyframes completeFlash {
+    0%  { filter: brightness(1); }
+    40% { filter: brightness(1.7) saturate(1.4); }
+    100%{ filter: brightness(1); }
+}
+
+/* Scrollbar hidden globally */
+::-webkit-scrollbar { display: none; }
+
+
+/* ─────────────────────────────────────────────────────────────────
+   11.  KEYFRAME ANIMATIONS  (already declared inline above;
+        listed here only as quick reference — no duplication)
+   ─────────────────────────────────────────────────────────────
+   bgBreathe · sealPulse · onlineBlink · barShimmer · statusRing
+   completeFlash
+───────────────────────────────────────────────────────────────── */
+
+
+/* ─────────────────────────────────────────────────────────────────
+   12.  RESPONSIVE
+───────────────────────────────────────────────────────────────── */
+
+/* Ultrawide  (≥ 2200px) — cap font sizes via root clamp  */
+@media (min-width: 2200px) {
+    :root {
+        --gutter  : 52px;
+        --header-h: 88px;
+        --footer-h: 72px;
+    }
+
+    .progress-pct { font-size: 120px; }
+}
+
+/* Small  (720p – 900p) — tighten spacing */
+@media (max-height: 900px), (max-width: 1280px) {
+    :root {
+        --header-h: 64px;
+        --footer-h: 56px;
+        --gutter  : 20px;
+    }
+
+    .server-name   { font-size: 17px; }
+    .progress-pct  { font-size: 70px; }
+    .progress-symbol{ font-size: 28px; }
+
+    .card-title { font-size: 14px; }
+    .card-items li { font-size: 11px; }
+
+    .volume-slider { width: 55px; }
+}
+
+/* Very narrow / portrait — collapse right panel */
+@media (max-width: 900px) {
+    .panel-right { display: none; }
+    .panel-left  { flex: 0 0 36%; }
+    .progress-section { flex: 1; }
+}
