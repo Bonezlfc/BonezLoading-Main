@@ -11,7 +11,7 @@ No jQuery. No frameworks. Pure vanilla JS — fast and clean.
 1. Drop the resource folder into your server's `resources/` directory
 2. Open `server.cfg` and add:
    ```
-   ensure sau_loading
+   ensure BonezLoading-main
    ```
 3. Make sure no other loading screen resource is running at the same time
 4. Restart your server and connect — the screen will appear
@@ -135,7 +135,7 @@ For example: `"Night Shift Roleplay"` → `"NSR"`.
 
 **To use your own logo image instead:**
 
-Open `web/index.html` and find the `<div class="sau-seal">` block.
+Open `web/index.html` and find the `<div class="bonezloading-main-seal">` block.
 Replace everything inside it with:
 
 ```html
@@ -166,7 +166,7 @@ The color is applied at runtime to the progress bar, glow effects, seal, nav dot
 ## File Structure
 
 ```
-sau_loading/
+BonezLoading-main/
 ├─ fxmanifest.lua          FiveM resource manifest — do not edit
 ├─ README.md               This file
 └─ web/
@@ -193,7 +193,7 @@ If you need to control this from a script (e.g. wait for a custom spawn system):
    client_script 'client.lua'
    ```
 
-2. Create `sau_loading/client.lua` and call this when your server is ready:
+2. Create `BonezLoading-main/client.lua` and call this when your server is ready:
    ```lua
    ShutdownLoadingScreen()
    ShutdownLoadingScreenNui()
@@ -207,7 +207,7 @@ If you need to control this from a script (e.g. wait for a custom spawn system):
 |---------|-----|
 | Music doesn't start automatically | Some environments block autoplay. The play button will appear. Set `Config.Autoplay = false` to always show the button instead of attempting auto-start. |
 | Player count shows "ONLINE" dot instead of numbers | The fetch to your server endpoints failed. Double-check `Config.ServerIP` is correct and the server is reachable. |
-| Progress bar doesn't move | Verify `sau_loading` is started before any resource that sends `loadProgress` messages. Check the order in `server.cfg`. |
+| Progress bar doesn't move | Verify `BonezLoading-main` is started before any resource that sends `loadProgress` messages. Check the order in `server.cfg`. |
 | Background image not showing | Confirm the file is in `web/assets/img/` and the path in `Config.BackgroundImages` matches the filename exactly — Linux paths are case-sensitive. |
 | Screen stays up indefinitely | Only one `loadscreen` resource can be active at a time. Check for conflicts in `server.cfg`. |
 | Fonts look wrong | The screen uses Google Fonts CDN. If your server has no outbound internet access during loading, it falls back to `Impact` and `Segoe UI` automatically. |
