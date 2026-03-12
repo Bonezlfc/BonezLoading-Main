@@ -24,8 +24,9 @@
      Gradient / particles toggled via Config.BackgroundMode in app.js.
 ════════════════════════════════════════════════════════════════ -->
 <div class="bg-layer" id="bg-layer">
-    <!-- Layer 1: image (mode='image' only — shown via has-image class) -->
-    <div class="bg-image" id="bg-image"></div>
+    <!-- Layer 1: image slideshow (mode='image' only — two slots crossfade between images) -->
+    <div class="bg-image" id="bg-image-a"></div>
+    <div class="bg-image" id="bg-image-b"></div>
     <!-- Layer 2: particle canvas (mode='particles' only) -->
     <canvas id="bg-canvas"></canvas>
     <!-- Layer 3: gradient or dim overlay depending on mode -->

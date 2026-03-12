@@ -153,7 +153,7 @@ a, button, [role="button"], input[type="range"],
     transition         : opacity 1s ease;
 }
 
-.bg-layer.has-image .bg-image {
+.bg-layer.has-image .bg-image.visible {
     opacity: 1;
 }
 

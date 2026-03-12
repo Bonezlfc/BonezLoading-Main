@@ -18,12 +18,12 @@ const Config = {
     ServerName : 'Your Server Name',           // ← CHANGE THIS
 
     // Short tagline shown under the server name
-    Tagline    : 'Your tagline goes here',      // ← CHANGE THIS
+    Tagline    : 'Your tagline here',          // ← CHANGE THIS
 
     // Your server's IP:port — used to display a live player count.
     // Example: '123.456.78.90:30120'
     // Set to '' to disable the player count entirely.
-    ServerIP   : '',                            // ← CHANGE THIS (or leave '' to disable)
+    ServerIP   : '',                           // ← CHANGE THIS
 
     // ─────────────────────────────────────────────────────────────
     // THEME
@@ -36,9 +36,22 @@ const Config = {
     // Background style: 'gradient' | 'particles' | 'image'
     //   gradient  — slow animated dark gradient (default, recommended)
     //   particles — floating particle drift on canvas
-    //   image     — your own background image (set BackgroundImage below)
+    //   image     — your own background image(s) — see BackgroundImages below
     BackgroundMode  : 'gradient',
-    BackgroundImage : 'assets/img/background.jpg',  // only used when mode = 'image'
+
+    // Background images — supports any browser format: .jpg .jpeg .png .webp .gif .avif
+    // Place files in: web/assets/img/
+    // • One entry  → static background image, no cycling.
+    // • Two+ entries → slideshow that crossfades between images automatically.
+    BackgroundImages : [
+        'assets/img/bg1.jpg',   // ← CHANGE THIS
+        // 'assets/img/bg2.jpg',
+        // 'assets/img/bg3.jpg',
+    ],
+
+    // Milliseconds between slideshow transitions (minimum: 3000 = 3 seconds).
+    // Only used when BackgroundImages has 2 or more entries.
+    BackgroundSlideInterval : 8000,
 
     // ─────────────────────────────────────────────────────────────
     // AUDIO
@@ -51,8 +64,8 @@ const Config = {
     // Place .mp3 files in:  web/assets/audio/
     // Format: { title: 'Display Name', file: 'assets/audio/yourfile.mp3' }
     Playlist : [
-        { title: 'Track One',   file: 'assets/audio/track1.mp3' },  // ← CHANGE THIS
-        { title: 'Track Two',   file: 'assets/audio/track2.mp3' },  // ← CHANGE THIS
+        { title: 'City Lights',   file: 'assets/audio/track1.mp3' },
+        { title: 'Streets of SA', file: 'assets/audio/track2.mp3' },
         // Add more tracks as needed
     ],
 
@@ -72,44 +85,45 @@ const Config = {
             icon  : '⚖',
             title : 'Server Rules',
             items : [
-                'Rule 1 — describe your rule here',     // ← CHANGE THIS
-                'Rule 2 — describe your rule here',
-                'Rule 3 — describe your rule here',
-                'Rule 4 — describe your rule here',
-                'Rule 5 — describe your rule here',
+                'Respect all players and staff at all times.',
+                'No RDM — you must have a valid RP reason to engage.',
+                'No VDM — vehicles are not weapons.',
+                'New Life Rule — after death, forget events leading to it.',
+                'No metagaming or powergaming at any time.',
+                'Stay in character in all public areas.',
             ],
         },
         {
             icon  : '🏙',
             title : 'What We Offer',
             items : [
-                'Feature one — describe it here',       // ← CHANGE THIS
-                'Feature two — describe it here',
-                'Feature three — describe it here',
-                'Feature four — describe it here',
-                'Feature five — describe it here',
+                'Immersive civilian, LEO, and criminal roleplay.',
+                'Custom jobs, businesses, and player-owned properties.',
+                'Whitelisted factions with dedicated training programs.',
+                'Regular content updates driven by community feedback.',
+                'Balanced economy built for long-term progression.',
             ],
         },
         {
             icon  : '💡',
             title : 'Did You Know?',
             items : [
-                'Tip or fact about your server here',   // ← CHANGE THIS
-                'Another interesting fact',
-                'Something players should know',
-                'A hidden feature or shortcut',
-                'A helpful reminder',
+                'You can purchase properties and businesses in-game.',
+                'New players receive a starter kit — check your inventory!',
+                'Use /report to reach staff without breaking immersion.',
+                'The city has a player-run government and council.',
+                'Weekly community events are announced on Discord.',
             ],
         },
         {
             icon  : '🤝',
             title : 'Community',
             items : [
-                'Community highlight or value',         // ← CHANGE THIS
-                'Another community highlight',
-                'Staff team info',
-                'Events info',
-                'How to get involved',
+                'Player-driven economy, politics, and criminal underworld.',
+                'Active and friendly community with zero tolerance for toxicity.',
+                'Dedicated staff team available around the clock.',
+                'Apply for whitelisted factions directly on our Discord.',
+                'Share your ideas in our suggestions channel.',
             ],
         },
     ],
@@ -119,11 +133,13 @@ const Config = {
     // ─────────────────────────────────────────────────────────────
 
     Tips : [
-        'Tip 1 — write a helpful tip for new players here.',    // ← CHANGE THIS
-        'Tip 2 — write another tip here.',
-        'Tip 3 — hint about a feature or command.',
-        'Tip 4 — remind players about rules or events.',
-        'Tip 5 — link to Discord or website for more info.',
+        'Press F1 to open the help menu and view available commands.',
+        'New to the server? Grab your starter kit from the spawn menu.',
+        'Use /report to contact staff in-game without breaking character.',
+        'Join our Discord to apply for whitelisted jobs and factions.',
+        'Remember the New Life Rule — death resets your memory of that scenario.',
+        'Properties and businesses are available to purchase across the map.',
+        'Weekly events are held in-game — keep an eye on our Discord for times.',
     ],
 
     // ─────────────────────────────────────────────────────────────
@@ -132,9 +148,9 @@ const Config = {
 
     // Available icons: 'discord' | 'web' | 'store' | 'tiktok' | 'twitter' | 'youtube'
     Links : [
-        { label: 'Discord', url: 'https://discord.gg/CHANGEME',       icon: 'discord' },  // ← CHANGE THIS
-        { label: 'Website', url: 'https://yourwebsite.com',           icon: 'web'     },  // ← CHANGE THIS
-        { label: 'Store',   url: 'https://store.yourwebsite.com',     icon: 'store'   },  // ← CHANGE THIS (or remove)
+        { label: 'Discord', url: 'https://discord.gg/your-invite', icon: 'discord' },  // ← CHANGE THIS
+        { label: 'Website', url: 'https://yourwebsite.com',        icon: 'web'     },  // ← CHANGE THIS
+        // { label: 'Store', url: 'https://store.yourwebsite.com', icon: 'store'   },
     ],
 
 };

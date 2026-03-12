@@ -1,0 +1,29 @@
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Logs / temp
+*.log
+*.tmp
+
+# Keep asset folders but ignore placeholder README.txts
+# (real audio/image files are user-added, not tracked)
+web/assets/audio/*.mp3
+web/assets/audio/*.ogg
+web/assets/audio/*.wav
+web/assets/img/*.jpg
+web/assets/img/*.jpeg
+web/assets/img/*.png
+web/assets/img/*.webp
+web/assets/img/*.gif
+web/assets/img/*.avif
+web/assets/img/*.bmp
+web/assets/img/*.tiff
+web/assets/img/*.tif

@@ -80,7 +80,8 @@
 
         // Background
         bgLayer      : $('bg-layer'),
-        bgImage      : $('bg-image'),
+        bgImageA     : $('bg-image-a'),
+        bgImageB     : $('bg-image-b'),
         bgCanvas     : $('bg-canvas'),
 
         // Custom cursor (FiveM hides OS cursor during loadscreen)
@@ -228,16 +229,43 @@
             runParticleCanvas();
 
         } else if (mode === 'image') {
-            const src = (Config.BackgroundImage || '').trim();
-            if (!src) return;
+            // Build image list — supports BackgroundImages array or legacy BackgroundImage string.
+            var images = [];
+            if (Array.isArray(Config.BackgroundImages) && Config.BackgroundImages.length) {
+                images = Config.BackgroundImages.filter(function (s) { return s && s.trim(); });
+            } else if (Config.BackgroundImage && Config.BackgroundImage.trim()) {
+                images = [Config.BackgroundImage.trim()];
+            }
+            if (!images.length) return;
+
+            dom.bgLayer.classList.add('has-image');
 
             // Set the background directly — do NOT use new Image() preload.
-            // FiveM's CEF does not reliably fire onload for NUI resource URLs,
-            // so the preload callback would never trigger.
+            // FiveM's CEF does not reliably fire onload for NUI resource URLs.
             // The CSS opacity:0 → 1 transition (1s) provides a smooth reveal.
-            // If the path is wrong, the div stays transparent (gradient shows).
-            dom.bgImage.style.backgroundImage = 'url(' + src + ')';
-            dom.bgLayer.classList.add('has-image');
+            // If a path is wrong, that slot stays transparent (gradient shows).
+            dom.bgImageA.style.backgroundImage = 'url(' + images[0] + ')';
+            dom.bgImageA.classList.add('visible');
+
+            if (images.length < 2) return;  // single image — no cycling needed
+
+            // Multi-image slideshow: A/B crossfade.
+            // One slot fades in while the other fades out — smooth crossfade for any N images.
+            var idx  = 0;
+            var useA = true;
+            var delay = Math.max(3000, Config.BackgroundSlideInterval || 8000);
+
+            setInterval(function () {
+                idx = (idx + 1) % images.length;
+                var next = useA ? dom.bgImageB : dom.bgImageA;
+                var prev = useA ? dom.bgImageA : dom.bgImageB;
+
+                next.style.backgroundImage = 'url(' + images[idx] + ')';
+                next.classList.add('visible');     // fade in
+                prev.classList.remove('visible');  // fade out simultaneously
+
+                useA = !useA;
+            }, delay);
         }
         // 'gradient' mode: no JS needed — CSS handles it by default.
     }

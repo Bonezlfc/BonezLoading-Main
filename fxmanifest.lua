@@ -3,7 +3,7 @@ game 'gta5'
 
 author 'Bonez Workshop'
 description 'FiveM Loading Screen — edit config.js to customise'
-version '1.0.0'
+version '2.0.0'
 
 files {
     'web/index.html',

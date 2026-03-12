@@ -8,10 +8,10 @@ No jQuery. No frameworks. Pure vanilla JS — fast and clean.
 
 ## Installation
 
-1. Drop the `Bonezloading` folder into your server's `resources/` directory
+1. Drop the resource folder into your server's `resources/` directory
 2. Open `server.cfg` and add:
    ```
-   ensure Bonezloading
+   ensure sau_loading
    ```
 3. Make sure no other loading screen resource is running at the same time
 4. Restart your server and connect — the screen will appear
@@ -222,5 +222,3 @@ If you need to control this from a script (e.g. wait for a custom spawn system):
 - **Dependencies:** none — no jQuery, no Vue, no React
 
 ---
-
-*Built by Bonez Workshop*
